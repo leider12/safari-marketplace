@@ -26,14 +26,10 @@ La API NestJS de `apps/api/rest` lo importa como cualquier dependencia.
 
 - **Un solo lugar para el SQL.** Los servicios de Nest no hablan con Prisma directamente: llaman funciones de este paquete. Así las reglas de la base (CHECK, índices, transacciones) viven junto a las consultas que las usan.
 - **Frontera JSON-safe.** Los repositorios no devuelven filas crudas de Prisma, sino *records* (`src/records.ts`) en camelCase, sin `BigInt` ni `Decimal`. La API los traduce al snake_case que publica.
-- **Errores con significado.** Los fallos de escritura salen como errores de
-  dominio con un código cerrado (400, 404 o 409), no como códigos `P2xxx` de
-  Prisma.
-- **Autónomo.** Usa npm, no forma parte del workspace de yarn de `apps/`. Se
-  construye con tsup a `dist/` y la API lo enlaza con `link:`.
+- **Errores con significado.** Los fallos de escritura salen como errores de dominio con un código cerrado (400, 404 o 409), no como códigos `P2xxx` de Prisma.
+- **Autónomo.** Usa npm, no forma parte del workspace de yarn de `apps/`. Se construye con tsup a `dist/` y la API lo enlaza con `link:`.
 
-El scraper Python (`services/scraper-worker`) **no** usa este paquete: escribe
-con SQL directo (psycopg) en la misma tabla `products`.
+El scraper Python (`services/scraper-worker`) **no** usa este paquete: escribe con SQL directo (psycopg) en la misma tabla `products`.
 
 ---
 
