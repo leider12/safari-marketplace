@@ -6,7 +6,7 @@
     "useIgnoreFile": true
   },
   "files": {
-    "includes"": ["**", "!generated/", "!node_modules/", "!README.md"]
+    "includes": ["**", "!generated/", "!node_modules/", "!README.md"]
   },
   "formatter": {
     "enabled": true,
