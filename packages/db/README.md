@@ -24,12 +24,8 @@ La API NestJS de `apps/api/rest` lo importa como cualquier dependencia.
 
 ## Qué es y por qué existe
 
-- **Un solo lugar para el SQL.** Los servicios de Nest no hablan con Prisma
-  directamente: llaman funciones de este paquete. Así las reglas de la base
-  (CHECK, índices, transacciones) viven junto a las consultas que las usan.
-- **Frontera JSON-safe.** Los repositorios no devuelven filas crudas de
-  Prisma, sino *records* (`src/records.ts`) en camelCase, sin `BigInt` ni
-  `Decimal`. La API los traduce al snake_case que publica.
+- **Un solo lugar para el SQL.** Los servicios de Nest no hablan con Prisma directamente: llaman funciones de este paquete. Así las reglas de la base (CHECK, índices, transacciones) viven junto a las consultas que las usan.
+- **Frontera JSON-safe.** Los repositorios no devuelven filas crudas de Prisma, sino *records* (`src/records.ts`) en camelCase, sin `BigInt` ni `Decimal`. La API los traduce al snake_case que publica.
 - **Errores con significado.** Los fallos de escritura salen como errores de
   dominio con un código cerrado (400, 404 o 409), no como códigos `P2xxx` de
   Prisma.
