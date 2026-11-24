@@ -25,7 +25,7 @@ La API NestJS de `apps/api/rest` lo importa como cualquier dependencia.
 ## Qué es y por qué existe
 
 - **Un solo lugar para el SQL.** Los servicios de Nest no hablan con Prisma directamente: llaman funciones de este paquete. Así las reglas de la base (CHECK, índices, transacciones) viven junto a las consultas que las usan.
-- **Frontera JSON-safe.** Los repositorios no devuelven filas crudas de Prisma, sino *records* (`src/records.ts`) en camelCase, sin `BigInt` ni `Decimal`. La API los traduce al snake_case que publica.
+- **Frontera JSON-safe.** Los repositorios no devuelven filas crudas de Prisma, sino _records_ (`src/records.ts`) en camelCase, sin `BigInt` ni `Decimal`. La API los traduce al snake_case que publica.
 - **Errores con significado.** Los fallos de escritura salen como errores de dominio con un código cerrado (400, 404 o 409), no como códigos `P2xxx` de Prisma.
 - **Autónomo.** Usa npm, no forma parte del workspace de yarn de `apps/`. Se construye con tsup a `dist/` y la API lo enlaza con `link:`.
 
@@ -92,12 +92,12 @@ packages/db/
 
 Piezas de `src/` que conviene conocer:
 
-| Archivo | Qué hace |
-|---|---|
+| Archivo     | Qué hace                                                                                                                                                                                                                                                                                                                          |
+| ----------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `client.ts` | Crea el `PrismaClient` en el **primer acceso** a `prisma`, no al importar (un `Proxy`). Si falta `DATABASE_URL`, lanza un error claro en ese momento. En `NODE_ENV=development` imprime las consultas. `setPrismaLogSink()` manda errores y warnings de Prisma a otro logger (la API los manda al `Logger` de Nest en `main.ts`). |
-| `health.ts` | `pingDatabase(timeoutMs = 2000)` hace `SELECT 1` con timeout y nunca lanza: devuelve `{ ok, latencyMs, error? }`. Lo usa `apps/api/rest/src/health/health.service.ts`. |
-| `slug.ts` | `generateSlug()` normaliza con `SELECT slugify($1)` de Postgres (una sola fuente de la regla) y añade sufijos `-2`, `-3`… si el slug ya existe. Cada repositorio le pasa su propia función de búsqueda (`ExistingSlugLookup`), así el nombre de la tabla nunca llega al SQL. Un texto que normaliza a vacío da `EmptySlugError`. |
-| `errors.ts` | `parsePrismaError`, `isPrismaConnectionError`, `getUserFriendlyMessage`… Son helpers de lectura. Para escrituras se usa `translateCatalogWriteError` de `domain-errors.ts`, que sí distingue P2002, P2003 y P2025. |
+| `health.ts` | `pingDatabase(timeoutMs = 2000)` hace `SELECT 1` con timeout y nunca lanza: devuelve `{ ok, latencyMs, error? }`. Lo usa `apps/api/rest/src/health/health.service.ts`.                                                                                                                                                            |
+| `slug.ts`   | `generateSlug()` normaliza con `SELECT slugify($1)` de Postgres (una sola fuente de la regla) y añade sufijos `-2`, `-3`… si el slug ya existe. Cada repositorio le pasa su propia función de búsqueda (`ExistingSlugLookup`), así el nombre de la tabla nunca llega al SQL. Un texto que normaliza a vacío da `EmptySlugError`.  |
+| `errors.ts` | `parsePrismaError`, `isPrismaConnectionError`, `getUserFriendlyMessage`… Son helpers de lectura. Para escrituras se usa `translateCatalogWriteError` de `domain-errors.ts`, que sí distingue P2002, P2003 y P2025.                                                                                                                |
 
 ---
 
@@ -169,12 +169,12 @@ npm run generate && npm test
 
 La cabecera de `prisma/schema.prisma` lista el detalle. En resumen:
 
-| Qué | Cómo se cubre |
-|---|---|
-| **CHECK constraints** (`products_rebaja_valida`, `coupons_vigencia_valida`, `reviews_rating_check`, los de `orders`…; la lista completa está en la cabecera de `schema.prisma`) | Prisma no los conoce. El repositorio valida **antes de escribir** y lanza un error de dominio (ver [Errores de dominio](#errores-de-dominio)). |
-| **Índice único parcial** `products_procedencia_key` (`(source_store, source_product_id) WHERE source_store IS NOT NULL`) | Sí está en el schema, gracias al preview `partialIndexes`. **No quites ese preview**: sin él, Prisma trataría el unique como total y `prisma validate` acusaría drift. `upsertScrapedProduct` opera sobre esa clave. |
-| **Índices únicos de expresión** `users_email_lower_idx` (`lower(email)`) y `reviews_autor_producto_orden_key` (`COALESCE(order_id, 0)`) | Invisibles para Prisma. Por eso `User.email` no lleva `@unique`, la búsqueda por email usa `$queryRaw` (ver «Identidad y acceso» en la [Referencia de repositorios](#referencia-de-repositorios)) y los P2002 que disparan se traducen a mano. |
-| **Índices trigram** `products_nombre_ilike_trgm_idx` y `questions_question_ilike_trgm_idx` | Sí están modelados, como `@@index(..., type: Gin)` sobre la columna. Así el `ILIKE` que genera `contains` + `mode: 'insensitive'` los usa. |
+| Qué                                                                                                                                                                             | Cómo se cubre                                                                                                                                                                                                                                  |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **CHECK constraints** (`products_rebaja_valida`, `coupons_vigencia_valida`, `reviews_rating_check`, los de `orders`…; la lista completa está en la cabecera de `schema.prisma`) | Prisma no los conoce. El repositorio valida **antes de escribir** y lanza un error de dominio (ver [Errores de dominio](#errores-de-dominio)).                                                                                                 |
+| **Índice único parcial** `products_procedencia_key` (`(source_store, source_product_id) WHERE source_store IS NOT NULL`)                                                        | Sí está en el schema, gracias al preview `partialIndexes`. **No quites ese preview**: sin él, Prisma trataría el unique como total y `prisma validate` acusaría drift. `upsertScrapedProduct` opera sobre esa clave.                           |
+| **Índices únicos de expresión** `users_email_lower_idx` (`lower(email)`) y `reviews_autor_producto_orden_key` (`COALESCE(order_id, 0)`)                                         | Invisibles para Prisma. Por eso `User.email` no lleva `@unique`, la búsqueda por email usa `$queryRaw` (ver «Identidad y acceso» en la [Referencia de repositorios](#referencia-de-repositorios)) y los P2002 que disparan se traducen a mano. |
+| **Índices trigram** `products_nombre_ilike_trgm_idx` y `questions_question_ilike_trgm_idx`                                                                                      | Sí están modelados, como `@@index(..., type: Gin)` sobre la columna. Así el `ILIKE` que genera `contains` + `mode: 'insensitive'` los usa.                                                                                                     |
 
 ---
 
@@ -185,12 +185,12 @@ La cabecera de `prisma/schema.prisma` lista el detalle. En resumen:
 Los repositorios devuelven tipos `*Record` de `src/records.ts`, construidos
 por mappers internos `_to*Record`:
 
-| Tipo en Postgres | En el record | Por qué |
-|---|---|---|
-| `bigserial` (ids) | `number` | `JSON.stringify` falla con `BigInt`, y los ids reales están lejos de `MAX_SAFE_INTEGER`. |
-| `numeric(12,2)` (precios, importes) | `number` | El frontend espera `price: 40.5`, como lo servía el mock. Con 12 dígitos y 2 decimales un double no pierde precisión práctica. Si algún día hace falta aritmética exacta, el único punto de cambio es `_dec()` en `records.ts`. |
-| `timestamptz` | `Date` | Nest lo serializa a ISO-8601 solo. |
-| `json` / `jsonb` | `Prisma.JsonValue` | Con columnas `json`, las claves salen en el orden del texto guardado. |
+| Tipo en Postgres                    | En el record       | Por qué                                                                                                                                                                                                                         |
+| ----------------------------------- | ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `bigserial` (ids)                   | `number`           | `JSON.stringify` falla con `BigInt`, y los ids reales están lejos de `MAX_SAFE_INTEGER`.                                                                                                                                        |
+| `numeric(12,2)` (precios, importes) | `number`           | El frontend espera `price: 40.5`, como lo servía el mock. Con 12 dígitos y 2 decimales un double no pierde precisión práctica. Si algún día hace falta aritmética exacta, el único punto de cambio es `_dec()` en `records.ts`. |
+| `timestamptz`                       | `Date`             | Nest lo serializa a ISO-8601 solo.                                                                                                                                                                                              |
+| `json` / `jsonb`                    | `Prisma.JsonValue` | Con columnas `json`, las claves salen en el orden del texto guardado.                                                                                                                                                           |
 
 **snake_case solo en la API.** La capa de datos habla camelCase; la
 traducción al contrato HTTP (snake_case) vive en los servicios de Nest.
@@ -206,7 +206,11 @@ envoltorio. Son paginación por offset, con `page` 1-based y un `limit` por
 defecto que depende del repositorio (30 en la mayoría).
 
 ```ts
-const { items, total } = await listProducts({ typeSlug: 'gadget', page, limit });
+const { items, total } = await listProducts({
+  typeSlug: "gadget",
+  page,
+  limit,
+});
 return buildPaginator({ data: items, total, page, limit, baseUrl });
 ```
 
@@ -262,13 +266,13 @@ Spec viva: [`data-layer-clock-policy`](../../openspec/specs/data-layer-clock-pol
 Se usa `$queryRaw` (tagged template: cada `${valor}` viaja como parámetro,
 nunca concatenado) solo donde Prisma no alcanza:
 
-| Repositorio | Para qué |
-|---|---|
-| `users` | `WHERE lower(email) = lower($1)`, el único que usa `users_email_lower_idx`. |
-| `conversations` | `DISTINCT ON` para el último mensaje de cada conversación de la página. |
-| `analytics` | `count(*) FILTER (...)` y agrupación por mes UTC. |
-| `ownership-transfers`, `flash-sale-requests` | `SELECT … FOR UPDATE` para bloquear filas dentro de una transacción. |
-| `slug.ts`, `health.ts` | `SELECT slugify($1)` y `SELECT 1`. |
+| Repositorio                                  | Para qué                                                                    |
+| -------------------------------------------- | --------------------------------------------------------------------------- |
+| `users`                                      | `WHERE lower(email) = lower($1)`, el único que usa `users_email_lower_idx`. |
+| `conversations`                              | `DISTINCT ON` para el último mensaje de cada conversación de la página.     |
+| `analytics`                                  | `count(*) FILTER (...)` y agrupación por mes UTC.                           |
+| `ownership-transfers`, `flash-sale-requests` | `SELECT … FOR UPDATE` para bloquear filas dentro de una transacción.        |
+| `slug.ts`, `health.ts`                       | `SELECT slugify($1)` y `SELECT 1`.                                          |
 
 `$queryRawUnsafe` no se usa en el código del paquete (solo en dos tests).
 
@@ -291,14 +295,14 @@ Spec viva: [`catalog-write-foundations`](../../openspec/specs/catalog-write-foun
 las clases extienden `CatalogWriteError` y reciben el agregado y el campo por
 parámetro, así que un agregado nuevo no añade clases ni toca este archivo.
 
-| Clase | `code` | HTTP | Cuándo |
-|---|---|---|---|
-| `EmptySlugError` | `CATALOG_EMPTY_SLUG` | 400 | El nombre (o el slug) normaliza a vacío. |
-| `InvalidReferenceError` | `CATALOG_INVALID_REFERENCE` | 400 | Una FK apunta a algo que no existe (P2003) o el id está mal formado. |
-| `InvalidFieldValueError` | `CATALOG_INVALID_REFERENCE` | 400 | Un valor viola un CHECK de valor simple. El repositorio lo lanza antes de escribir; el mensaje nombra el CHECK real. |
-| `RecordNotFoundError` | `CATALOG_RECORD_NOT_FOUND` | 404 | Actualizar o borrar algo que no existe (P2025). |
-| `DependentRowsError` | `CATALOG_DEPENDENT_ROWS` | 409 | Borrar dejaría filas huérfanas. |
-| `SlugConflictError` | `CATALOG_SLUG_CONFLICT` | 409 | **Cualquier** clave única repetida (P2002), sea slug o no: el `code` de un cupón, el único de tres columnas de reseñas… El mensaje nombra el campo, no el valor. |
+| Clase                    | `code`                      | HTTP | Cuándo                                                                                                                                                           |
+| ------------------------ | --------------------------- | ---- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `EmptySlugError`         | `CATALOG_EMPTY_SLUG`        | 400  | El nombre (o el slug) normaliza a vacío.                                                                                                                         |
+| `InvalidReferenceError`  | `CATALOG_INVALID_REFERENCE` | 400  | Una FK apunta a algo que no existe (P2003) o el id está mal formado.                                                                                             |
+| `InvalidFieldValueError` | `CATALOG_INVALID_REFERENCE` | 400  | Un valor viola un CHECK de valor simple. El repositorio lo lanza antes de escribir; el mensaje nombra el CHECK real.                                             |
+| `RecordNotFoundError`    | `CATALOG_RECORD_NOT_FOUND`  | 404  | Actualizar o borrar algo que no existe (P2025).                                                                                                                  |
+| `DependentRowsError`     | `CATALOG_DEPENDENT_ROWS`    | 409  | Borrar dejaría filas huérfanas.                                                                                                                                  |
+| `SlugConflictError`      | `CATALOG_SLUG_CONFLICT`     | 409  | **Cualquier** clave única repetida (P2002), sea slug o no: el `code` de un cupón, el único de tres columnas de reseñas… El mensaje nombra el campo, no el valor. |
 
 Cómo se usan:
 
@@ -314,14 +318,14 @@ Cómo se usan:
 Errores propios de un repositorio, para reglas que cruzan varios campos o
 estados:
 
-| Error | Dónde | Código que reutiliza |
-|---|---|---|
-| `InvalidSalePriceError`, `MissingPriceError`, `IncompleteProvenanceError` | `products` | Traducen los CHECK multicampo de `products`. |
-| `DuplicateEmailError` | `users` | Email repetido (el índice de expresión). |
-| `InsufficientStockError` | `orders` | 409. |
-| `SameOwnerError` | `ownership-transfers` | 409. |
-| `InvalidFlashSaleRequestError` | `flash-sale-requests` | 400. |
-| `FlashSaleRequestStateError` | `flash-sale-requests` | 409. |
+| Error                                                                     | Dónde                 | Código que reutiliza                         |
+| ------------------------------------------------------------------------- | --------------------- | -------------------------------------------- |
+| `InvalidSalePriceError`, `MissingPriceError`, `IncompleteProvenanceError` | `products`            | Traducen los CHECK multicampo de `products`. |
+| `DuplicateEmailError`                                                     | `users`               | Email repetido (el índice de expresión).     |
+| `InsufficientStockError`                                                  | `orders`              | 409.                                         |
+| `SameOwnerError`                                                          | `ownership-transfers` | 409.                                         |
+| `InvalidFlashSaleRequestError`                                            | `flash-sale-requests` | 400.                                         |
+| `FlashSaleRequestStateError`                                              | `flash-sale-requests` | 409.                                         |
 
 Los que reutilizan un código de la tabla de arriba pasan por
 `toWriteHttpException` sin cambios en la API.
@@ -389,16 +393,16 @@ Todas las funciones se importan de `@safari/db`. Esta tabla es el mapa; el
 detalle de cada uno está en los bloques de abajo y en la cabecera de su
 archivo.
 
-| Área | Repositorios |
-|---|---|
-| Catálogo | `products`, `categories`, `types`, `tags`, `manufacturers`, `attributes`, `authors` |
-| Tiendas | `shops`, `staff`, `ownership-transfers`, `withdraws`, `become-seller` |
-| Configuración | `settings`, `taxes`, `shippings`, `order-statuses` |
-| Contenido | `faqs`, `terms-and-conditions`, `refund-policies`, `refund-reasons`, `store-notices` |
-| Ventas | `coupons`, `flash-sale`, `flash-sale-requests`, `orders`, `order-files`, `wishlists` |
-| Comunidad | `reviews`, `abusive-reports`, `questions`, `conversations` |
-| Identidad y acceso | `users`, `auth-tokens` |
-| Dashboard | `analytics` |
+| Área               | Repositorios                                                                         |
+| ------------------ | ------------------------------------------------------------------------------------ |
+| Catálogo           | `products`, `categories`, `types`, `tags`, `manufacturers`, `attributes`, `authors`  |
+| Tiendas            | `shops`, `staff`, `ownership-transfers`, `withdraws`, `become-seller`                |
+| Configuración      | `settings`, `taxes`, `shippings`, `order-statuses`                                   |
+| Contenido          | `faqs`, `terms-and-conditions`, `refund-policies`, `refund-reasons`, `store-notices` |
+| Ventas             | `coupons`, `flash-sale`, `flash-sale-requests`, `orders`, `order-files`, `wishlists` |
+| Comunidad          | `reviews`, `abusive-reports`, `questions`, `conversations`                           |
+| Identidad y acceso | `users`, `auth-tokens`                                                               |
+| Dashboard          | `analytics`                                                                          |
 
 <details>
 <summary><strong>Catálogo</strong>: products, categories, types, tags, manufacturers, attributes, authors</summary>
@@ -662,7 +666,7 @@ direcciones como `JsonValue`. `OrderDetailRecord` añade `lines` (por
 - `findProductsForOrder(ids)`: los productos vivos de un carrito.
 - `createOrderWithChildren`: en un `$transaction`, el padre, una hija por
   tienda con sus líneas y el descuento de stock (`updateMany … where
-  quantity >= n`). Sin stock: `InsufficientStockError` y rollback. Genera los
+quantity >= n`). Sin stock: `InsufficientStockError` y rollback. Genera los
   `tracking_number` (`YYYYMMDD` UTC + 6 dígitos, hasta 5 intentos).
 - `setOrderStatus(id, { orderStatus?, paymentStatus? })`: valida contra
   `ORDER_STATUSES` / `PAYMENT_STATUSES` y propaga a las hijas. No se llama
@@ -830,7 +834,7 @@ arrancar, porque no ejecuta TypeScript de `node_modules`. Por eso tsup genera
   `types` cubren a las herramientas que lo ignoran. Sin ellos, alguna caería
   al `.ts` fuente.
 - **Solo CJS.** El paquete exporta un singleton con estado (el cliente de
-  Prisma). Emitir CJS y ESM a la vez abre el *dual package hazard*: dos
+  Prisma). Emitir CJS y ESM a la vez abre el _dual package hazard_: dos
   copias del módulo, dos clientes y dos pools de conexiones. La API es ESM y
   aun así importa funciones por nombre, porque tsup deja al final de
   `dist/index.js` la anotación `0 && (module.exports = { … })` que Node usa
